@@ -5,7 +5,6 @@ open System
 type RGB = {R:float; G:float; B:float}
 /// hue, saturation and brightness: 0.0 - 1.0
 type HSB = {H:float; S:float; B:float}
-/// hue:0 - 360, saturatoin and lightness: 0 - 100
 /// hue:0 - 1.0, saturatoin and lightness: 0 - 1.0
 type HUSL ={H:float; S:float; L:float}
 
