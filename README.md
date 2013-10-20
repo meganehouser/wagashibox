@@ -41,13 +41,13 @@ let noStroke ()
 let strokeWidth width
 
 // 図形の平行移動
-let translate point
+let translate (x, y)
 
 // 回転角度の指定
 let rotate degrees
 
 // 図形の拡大・縮小
-let scale point
+let scale (x, y)
 ```
 
 ## 色

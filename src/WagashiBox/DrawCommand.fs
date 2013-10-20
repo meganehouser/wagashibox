@@ -95,6 +95,7 @@ module DrawCommand =
             setShapeColors polygon fore fill
             drawCanvas wgs polygon {X=0.0; Y=0.0} ctx
 
+    /// 連続直線を描く
     let polyline (points: Point list)  (wgs: Wagashi) (ctx: Context) =
         match ctx.ForeColor, ctx.FillColor with
         | None, None -> ()
@@ -112,26 +113,50 @@ module DrawCommand =
     let background (color:Color) (wgs: Wagashi) (ctx: Context) =
         wgs.Background <- new SolidColorBrush(color)
 
+    /// 図形の平行移動
+    let translate point ctx = {ctx with Offset={X=point.X; Y=point.Y}}
+    
+    /// 回転角度の指定
+    let rotate degrees ctx = {ctx with Rotation=degrees}
+    
+    /// 図形の拡大・縮小
+    let scale point ctx = {ctx with Scale={X=point.X; Y=point.Y}}
+
+
 module EasyDrawCommand =
+    /// 線を描く
     let line(x1, y1, x2, y2) (wgs:Wagashi) (ctx:Context) =
         DrawCommand.line {X=x1; Y=y1} {X=x2; Y=y2} wgs ctx
 
+    /// 四角形を描く
     let rect(x, y, width, height) (wgs:Wagashi) (ctx: Context) =
         DrawCommand.rect {X=x; Y=y} {W=width; H=height} wgs ctx
 
+    /// 円を描く
     let oval(x, y, width, height) (wgs:Wagashi) (ctx: Context) =
         DrawCommand.oval {X=x; Y=y} {W=width; H=height} wgs ctx
 
-    let background = DrawCommand.background
-
+    /// 多角形を描く
     let polygon (points: (float * float) list) (wgs: Wagashi) (ctx: Context) =
         let pts = points |> List.map(fun (x, y) -> {X=x; Y=y})
         DrawCommand.polygon(pts) wgs ctx
-
+    
+    /// 連続直線を描く
     let polyline (points: (float * float) list) (wgs: Wagashi) (ctx: Context) =
         let pts = points |> List.map(fun (x, y) -> {X=x; Y=y})
         DrawCommand.polyline(pts) wgs ctx
 
+    /// 背景色の塗りつぶし
+    let background = DrawCommand.background
+
+    /// 図形の平行移動
+    let translate (x, y) ctx = DrawCommand.translate {X=x; Y=y} ctx
+    
+    /// 回転角度の指定
+    let rotate = DrawCommand.rotate
+    
+    /// 図形の拡大・縮小
+    let scale (x, y) ctx = DrawCommand.scale {X=x; Y=y} ctx
 
 [<AutoOpen>]
 module ColorState =
@@ -149,14 +174,3 @@ module ColorState =
 
     /// 描画幅の指定
     let strokeWidth width ctx = {ctx with StrokeWidth=width}
-
-[<AutoOpen>]
-module Transformation =
-    /// 図形の平行移動
-    let translate point ctx = {ctx with Offset=point}
-    
-    /// 回転角度の指定
-    let rotate degrees ctx = {ctx with Rotation=degrees}
-    
-    /// 図形の拡大・縮小
-    let scale point ctx = {ctx with Scale=point}
