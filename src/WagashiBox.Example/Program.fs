@@ -18,7 +18,7 @@ module Program =
 
             do! stroke Colors.AliceBlue
             do! strokeWidth 2.0
-
+            
             seq{0.0 .. 5.0 .. 500.0}
             |> Seq.fold(fun (lastX, lastY) x ->
                 let y = lastY + (random.NextDouble() * 30.0 - 15.0)

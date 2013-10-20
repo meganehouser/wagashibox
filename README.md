@@ -51,7 +51,35 @@ let scale point
 ```
 
 ## 色
-RGB, HSB, HUSL色空間が使用できる予定です。
+RGB, HSB, HUSL色空間が使用可能。
+
+```
+// R(Red: 0.0 - 1.0), G(Green: 0.0 - 1.0), B(Blue: 0.0 - 1.0)
+type RGB = {R:float; G:float; B:float}
+
+// H(Hue: 0.0 - 1.0), S(Saturation: 0.0 - 1.0), B(Brightness: 0.0 - 1.0)
+type HSB = {H:float; S:float; B:float}
+
+// H(hue:0 - 1.0), S(Saturatoin: 0.0 - 1.0), L(lightness: 0 - 1.0
+type HUSL ={H:float; S:float; L:float}
+```
+
+各コマンドは色の型としてSystem.Windows.Media.Colorを受ける
+各色空間での変換は以下の通り
+
+```
+// System.Windows.Media.ColorをHUSL型に変換
+let husl = Colors.AliceBlue.ToHUSL()
+
+// System.Windows.Media.ColorをHSB型に変換
+let hsb = Colors.AliceBlue.ToHSB()
+
+// HUSL型をSystem.Windows.Media.Colorに変換
+let color = husl.ToColor()
+
+// HSB型をSystem.Windows.Media.Colorに変換
+let color = hsb.ToColor()
+```
 
 
 ## 例

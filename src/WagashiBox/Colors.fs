@@ -6,6 +6,7 @@ type RGB = {R:float; G:float; B:float}
 /// hue, saturation and brightness: 0.0 - 1.0
 type HSB = {H:float; S:float; B:float}
 /// hue:0 - 360, saturatoin and lightness: 0 - 100
+/// hue:0 - 1.0, saturatoin and lightness: 0 - 1.0
 type HUSL ={H:float; S:float; L:float}
 
 type Colors = System.Windows.Media.Colors
@@ -39,13 +40,13 @@ module HUSL =
     let private refU = 0.19784
     let private refV = 0.46834
     let private lab_e = 0.008856
-    let private lab_k = 903.0
+    let private lab_k = 903.3
 
     let private maxChroma(lightness, hue) =
         let hrad = hue * Math.PI / 180.0
         let sinH = sin hrad
         let cosH = cos hrad
-        let sub1 = lightness ** 3.0 / 1560896.0
+        let sub1 = (lightness + 16.0)**3.0 / 1560896.0
         let sub2 = if sub1 > 0.008856 then sub1 else (lightness / 903.3)
         
         m 
@@ -59,11 +60,6 @@ module HUSL =
                 let c = lightness * (top - 1.05122 * t) / (bottom + 0.17266 * sinH * t)    
                 if c > 0.0 && c < r then c else r) result
             ) MAX_FLOAT32
-
-    let private dotProduct(a, b) =
-        List.zip a b
-        |> List.map(fun (v1, v2) -> v1 * v2)
-        |> List.sum
 
     let private f t =
         if t > lab_e then
@@ -94,7 +90,8 @@ module HUSL =
         let c = ((luv.U**2.0) + luv.V**2.0)**(1.0/2.0)
         let hrad = atan2 luv.V luv.U
         let h = hrad / (Math.PI / 180.0)
-        {L=luv.L; C=c; H=(if h < 0.0 then h + 360.0 else h)}
+        let h = if h < 0.0 then h + 360.0 else h
+        {L=luv.L; C=c; H=h}
 
     let private lch_to_luv (lch: LCH) =
         let hrad = lch.H * Math.PI / 180.0
@@ -121,29 +118,33 @@ module HUSL =
         if luv.L = 0.0 then
             {X=0.0; Y=0.0; Z=0.0}
         else
-            let varY = f_inv(luv.L + 16.0) / 116.0
+            let varY = f_inv((luv.L + 16.0) / 116.0)
             let varU = luv.U / (13.0 * luv.L) + refU
             let varV = luv.V / (13.0 * luv.L) + refV
             let y = varY * refY
-            let x = 0.0 - (9.0 * y * varU) / (varU - 4.0) * varV - varU * varV
+            let x = 0.0 - (9.0 * y * varU) / ((varU - 4.0) * varV - varU * varV)
             let z = (9.0 * y - (15.0 * varV * y) - (varV * x)) / (3.0 * varV)
             {X=x; Y=y; Z=z}
 
     let private rgb_to_xyz (rgb: RGB) =
-        let rgbl = [rgb.R; rgb.G; rgb.B]
-        let toList (v1, v2, v3) = [v1; v2; v3]
-        let x = rgbl |> List.map(toLinear) |> fun r -> dotProduct(r, toList(m.[0]))
-        let y = rgbl |> List.map(toLinear) |> fun r -> dotProduct(r, toList(m.[1]))
-        let z = rgbl |> List.map(toLinear) |> fun r -> dotProduct(r, toList(m.[2]))
+        let dotProduct(a, (b1, b2, b3)) =
+            List.zip a [b1; b2; b3]
+            |> List.map(fun (v1, v2) -> v1 * v2)
+            |> List.sum
+
+        let rgbl = [rgb.R; rgb.G; rgb.B] |> List.map toLinear
+        let x = rgbl |> fun r -> dotProduct(r, m_inv.[0])
+        let y = rgbl |> fun r -> dotProduct(r, m_inv.[1])
+        let z = rgbl |> fun r -> dotProduct(r, m_inv.[2])
         {X=x; Y=y; Z=z}
         
 
     let private xyz_to_rgb (xyz: XYZ) =
         let xyzl = [xyz.X; xyz.Y; xyz.Z]
-        let toList (v1, v2, v3) = [v1; v2; v3]
-        let r = dotProduct(xyzl, toList(m.[0])) |> fromLinear
-        let g = dotProduct(xyzl, toList(m.[1])) |> fromLinear
-        let b = dotProduct(xyzl, toList(m.[2])) |> fromLinear
+        let dotProduct = fun (m1, m2, m3) -> xyz.X * m1 + xyz.Y * m2 + xyz.Z * m3
+        let r = m.[0] |> dotProduct |> fromLinear
+        let g = m.[1] |> dotProduct |> fromLinear
+        let b = m.[2] |> dotProduct |> fromLinear
         {R=r; G=g; B=b}
 
     let private lch_to_husl(lch: LCH) =
@@ -160,14 +161,16 @@ module HUSL =
         | _ when husl.L > 99.9999999 -> {L=100.0; C=0.0; H=husl.H}
         | _ when husl.L < 0.00000001 -> {L=0.0;   C=0.0; H=husl.H}
         | _ -> let mx = maxChroma(husl.L, husl.H)
-               let c = mx / 100.0 * 5.0
+               let c = mx / 100.0 * husl.S
                {L=husl.L; C=c; H=husl.H}
 
     let private lch_to_rgb = lch_to_luv >> luv_to_xyz >> xyz_to_rgb
     let private rgb_to_lch = rgb_to_xyz >> xyz_to_luv >> luv_to_lch
 
-    let toRGB = husl_to_lch >> lch_to_rgb
-    let fromRGB = rgb_to_lch >> lch_to_husl
+    let toRGB = (fun (husl:HUSL) -> {H=husl.H * 360.0; S=husl.S * 100.0; L=husl.L * 100.0}) 
+                >> husl_to_lch >> lch_to_rgb
+    let fromRGB = rgb_to_lch >> lch_to_husl 
+                >> (fun husl -> {H=husl.H / 360.0; S=husl.S / 100.0; L=husl.L / 100.0})
 
 [<CompilationRepresentation(CompilationRepresentationFlags.ModuleSuffix)>]
 module HSB =
@@ -178,18 +181,18 @@ module HSB =
         let s = (if v = 0.0 then 0.0 else d / v)
         let h = 
             if s = 0.0 then
+                0.0
+            else
                 match v with
                 | _ when rgb.R = v -> 0.0 + (rgb.G - rgb.B) / d
                 | _ when rgb.G = v -> 2.0 + (rgb.B - rgb.R) / d
                 | _ -> 4.0 + (rgb.R - rgb.G) / d
-            else
-                0.0
-
-        {H=(h / 6.0 % 1.0); S=s; B=v}
+        let h = abs(h / 6.0 % 1.0)
+        {H=h; S=s; B=v}
             
     let toRGB (hsb: HSB) =
         if hsb.S = 0.0 then
-            {R=0.0; G=0.0; B=0.0}
+            {R=hsb.B; G=hsb.B; B=hsb.B}
         else
             let h = hsb.H % 1.0 * 6.0
             let i = floor h
@@ -208,23 +211,26 @@ module HSB =
 
 [<AutoOpen>]
 module ColorExt =
+    let private conv v = float v / 255.0
+    let private conv2 v = byte(v * 255.0)
+
     type System.Windows.Media.Color with
         member this.ToHSB() =
-            HSB.fromRGB {R=float this.ScR; G=float this.ScG; B=float this.ScB}
+            HSB.fromRGB {R=conv this.R; G=conv this.G; B=conv this.B}
 
         member this.ToHUSL() =
-            HUSL.fromRGB {R=float this.ScR; G=float this.ScG; B=float this.ScB}
+            HUSL.fromRGB {R=conv this.R; G=conv this.G; B=conv this.B}
 
     type RGB with
         member this.ToColor(opacity: float) =
-            System.Windows.Media.Color.FromScRgb(float32 opacity, float32 this.R, float32 this.B, float32 this.R)
+            System.Windows.Media.Color.FromArgb(conv2 opacity, conv2 this.R, conv2 this.G, conv2 this.B)
 
     type HSB with
         member this.ToColor(opacity: float) =
             let rgb = HSB.toRGB this
-            System.Windows.Media.Color.FromScRgb(float32 opacity, float32 rgb.R, float32 rgb.B, float32 rgb.R)
+            System.Windows.Media.Color.FromArgb(conv2 opacity, conv2 rgb.R, conv2 rgb.G, conv2 rgb.B)
 
     type HUSL with
         member this.ToColor(opacity: float) =
             let rgb = HUSL.toRGB this
-            System.Windows.Media.Color.FromScRgb(float32 opacity, float32 rgb.R, float32 rgb.B, float32 rgb.R)
+            System.Windows.Media.Color.FromArgb(conv2 opacity, conv2 rgb.R, conv2 rgb.G, conv2 rgb.B)
