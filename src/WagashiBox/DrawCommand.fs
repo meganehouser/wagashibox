@@ -3,6 +3,7 @@
 open System.Windows.Controls
 open System.Windows.Media
 open System.Windows.Shapes
+open SimplexNoise
 
 type Context = {
         ForeColor:Color Option
@@ -174,3 +175,35 @@ module ColorState =
 
     /// 描画幅の指定
     let strokeWidth width ctx = {ctx with StrokeWidth=width}
+
+/// Perlin noise
+/// use SimplexNoise https://code.google.com/p/simplexnoise/
+[<AutoOpen>]
+module Noise =
+    let noiser =lazy(        
+            let b: byte [] = Array.zeroCreate 512
+            let rand = new System.Random()
+            do rand.NextBytes(b)
+            Noise.perm <- b
+            )
+
+    let noise (x:float) = 
+        noiser.Force()
+        float32 x |> Noise.Generate |> float
+
+    let noise2d(x:float, y:float) =
+        noiser.Force()
+        (float32 x, float32 y) |> Noise.Generate |> float
+
+    let noise3d(x:float, y:float, z:float) =
+        noiser.Force()
+        (float32 x, float32 y, float32 z) |> Noise.Generate |> float
+
+[<AutoOpen>]
+module Random =
+    let mutable private rnd = new System.Random()
+
+    let random(v1, v2, bias) =
+        let r = rnd.NextDouble()**bias
+        r * (v2 - v1) + v1
+

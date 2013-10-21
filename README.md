@@ -81,6 +81,22 @@ let color = husl.ToColor()
 let color = hsb.ToColor()
 ```
 
+## ユーティリティ
+```
+// パーリンノイズ
+// use SimplexNoise https://code.google.com/p/simplexnoise/
+// -1.0 ~ 1.0 のノイズを返す
+noise(x)
+
+noise2d(x, y)
+
+noise3d(x, y, z)
+
+// 乱数
+// v1 ~ ｖ2 の乱数を返す
+// bias: 0.0 - 1.0
+random(v1, v2, bias)
+```
 
 ## 例
 ```
