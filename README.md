@@ -29,25 +29,25 @@ polyline(points: (float * float) list)
 fill color
 
 // 描画色の指定
-let stroke color
+stroke color
 
 // 塗りつぶしなしに指定
-let nofill ()
+nofill ()
 
 // 描画色なしに指定
-let noStroke ()
+noStroke ()
 
 // 描画幅の指定
-let strokeWidth width
+strokeWidth width
 
 // 図形の平行移動
-let translate (x, y)
+translate (x, y)
 
 // 回転角度の指定
-let rotate degrees
+rotate degrees
 
 // 図形の拡大・縮小
-let scale (x, y)
+scale (x, y)
 ```
 
 ## 色
