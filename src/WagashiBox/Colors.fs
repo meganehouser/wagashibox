@@ -220,6 +220,9 @@ module ColorExt =
         member this.ToHUSL() =
             HUSL.fromRGB {R=conv this.R; G=conv this.G; B=conv this.B}
 
+        member this.ToRGB() =
+            {R=conv this.R; G=conv this.G; B=conv this.B}
+
     type RGB with
         member this.ToColor(opacity: float) =
             System.Windows.Media.Color.FromArgb(conv2 opacity, conv2 this.R, conv2 this.G, conv2 this.B)

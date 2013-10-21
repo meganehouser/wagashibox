@@ -68,11 +68,17 @@ type HUSL ={H:float; S:float; L:float}
 各色空間での変換は以下の通り
 
 ```
+// System.Windows.Media.ColorをRGB型に変換
+let rgb = Colors.AliceBlue.ToRGB()
+
 // System.Windows.Media.ColorをHUSL型に変換
 let husl = Colors.AliceBlue.ToHUSL()
 
 // System.Windows.Media.ColorをHSB型に変換
 let hsb = Colors.AliceBlue.ToHSB()
+
+// RGB型をSystem.Windows.Media.Colorに変換
+let color = rgb.ToColor()
 
 // HUSL型をSystem.Windows.Media.Colorに変換
 let color = husl.ToColor()
