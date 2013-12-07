@@ -26,7 +26,10 @@ type Wagashi () =
 
     member this.Background
         with get() = (window.Content :?> Canvas).Background
-        and set(value) = (window.Content :?> Canvas).Background <- value
+        and set(value) = 
+            let canvas = window.Content :?> Canvas
+            canvas.Children.Clear()
+            canvas.Background <- value
 
     member this.Show () = window.Show()
 
