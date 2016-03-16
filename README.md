@@ -105,7 +105,7 @@ random(v1, v2, bias)
 ```
 
 ## 例
-```
+```fsharp
 namespace WagashiBoxLib
 
 open System
